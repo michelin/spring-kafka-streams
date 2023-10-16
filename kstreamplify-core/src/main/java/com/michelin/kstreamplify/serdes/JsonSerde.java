@@ -1,7 +1,10 @@
 package com.michelin.kstreamplify.serdes;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import lombok.AllArgsConstructor;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
@@ -9,17 +12,15 @@ import org.apache.kafka.common.serialization.Serializer;
 
 import java.util.Map;
 
-public abstract class JsonSerde<T> implements Serializer<T>, Deserializer<T>, Serde<T> {
+@AllArgsConstructor
+public class JsonSerde<T> implements Serializer<T>, Deserializer<T>, Serde<T> {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule());
-    private TypeReference<T> typeReference;
+    //private TypeReference<T> typeReference;
+    private Class<T> clazz;
 
-    @Override
-    public void configure(final Map<String, ?> configs, final boolean isKey) {
-        typeReference = getTypeReference();
+    public JsonSerde() {
     }
-
-    protected abstract TypeReference<T> getTypeReference();
 
     @Override
     public T deserialize(final String topic, final byte[] data) {
@@ -28,10 +29,15 @@ public abstract class JsonSerde<T> implements Serializer<T>, Deserializer<T>, Se
         }
 
         try {
-            return OBJECT_MAPPER.readValue(data, typeReference);
+            return OBJECT_MAPPER.readValue(data, clazz);
         } catch (final Exception e) {
             throw new SerializationException(e);
         }
+    }
+
+    @Override
+    public void configure(Map<String, ?> configs, boolean isKey) {
+        //Serializer.super.configure(configs, isKey);
     }
 
     @Override

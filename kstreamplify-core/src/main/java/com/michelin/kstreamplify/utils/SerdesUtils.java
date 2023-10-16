@@ -12,11 +12,14 @@ public final class SerdesUtils {
     }
 
     /**
+     * @deprecated This method is only here for compatibility purposes, using avro keys is not recommended!!
+     * Recommended use is string concatenation.
      * Return a key serdes for a requested class.
      *
      * @param <T> The class of requested serdes
      * @return a serdes for requested class
      */
+    @Deprecated
     public static <T extends SpecificRecord> SpecificAvroSerde<T> getSerdesForKey() {
         return getSerdes(true);
     }

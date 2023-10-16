@@ -1,8 +1,11 @@
 package com.michelin.kstreamplify.error;
 
 import com.michelin.kstreamplify.context.KafkaStreamsExecutionContext;
+import com.michelin.kstreamplify.utils.JsonSerdesUtils;
 import com.michelin.kstreamplify.utils.SerdesUtils;
+
 import java.util.Map;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.common.serialization.Serdes;
@@ -11,6 +14,8 @@ import org.apache.kafka.streams.kstream.Branched;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Named;
 import org.apache.kafka.streams.kstream.Produced;
+
+import static com.michelin.kstreamplify.constants.PropertyConstants.*;
 
 /**
  * The topology error handler class.
@@ -52,25 +57,25 @@ public class TopologyErrorHandler {
         String branchNamePrefix = stream.toString().split("@")[1];
         if (!allowTombstone) {
             branches = stream
-                .filter((key, value) -> value != null)
-                .filterNot((key, value) -> value.getValue() == null && value.getError() == null)
-                .split(Named.as(branchNamePrefix))
-                .branch((key, value) -> value.isValid(), Branched.as(BRANCHING_NAME_NOMINAL))
-                .defaultBranch(Branched.withConsumer(ks -> TopologyErrorHandler.handleErrors(ks
-                    .mapValues(ProcessingResult::getError))));
+                    .filter((key, value) -> value != null)
+                    .filterNot((key, value) -> value.getValue() == null && value.getError() == null)
+                    .split(Named.as(branchNamePrefix))
+                    .branch((key, value) -> value.isValid(), Branched.as(BRANCHING_NAME_NOMINAL))
+                    .defaultBranch(Branched.withConsumer(ks -> TopologyErrorHandler.handleErrors(ks
+                            .mapValues(ProcessingResult::getError))));
         } else {
             branches = stream
-                .filter((key, value) -> value != null)
-                .split(Named.as(branchNamePrefix))
-                .branch((key, value) -> value.getError() == null,
-                    Branched.as(BRANCHING_NAME_NOMINAL))
-                .defaultBranch(Branched.withConsumer(ks -> TopologyErrorHandler.handleErrors(ks
-                    .mapValues(ProcessingResult::getError))));
+                    .filter((key, value) -> value != null)
+                    .split(Named.as(branchNamePrefix))
+                    .branch((key, value) -> value.getError() == null,
+                            Branched.as(BRANCHING_NAME_NOMINAL))
+                    .defaultBranch(Branched.withConsumer(ks -> TopologyErrorHandler.handleErrors(ks
+                            .mapValues(ProcessingResult::getError))));
         }
 
         return branches
-            .get(branchNamePrefix + BRANCHING_NAME_NOMINAL)
-            .mapValues(ProcessingResult::getValue);
+                .get(branchNamePrefix + BRANCHING_NAME_NOMINAL)
+                .mapValues(ProcessingResult::getValue);
     }
 
     /**
@@ -83,15 +88,26 @@ public class TopologyErrorHandler {
     private static <K, V> void handleErrors(KStream<K, ProcessingError<V>> errorsStream) {
         if (StringUtils.isBlank(KafkaStreamsExecutionContext.getDlqTopicName())) {
             log.warn(
-                "Failed to route topology error to the designated DLQ (Dead Letter Queue) topic. "
-                    +
-                    "Please make sure to define a DLQ topic in your KafkaStreamsStarter bean configuration.");
+                    "Failed to route topology error to the designated DLQ (Dead Letter Queue) topic. "
+                            +
+                            "Please make sure to define a DLQ topic in your KafkaStreamsStarter bean configuration.");
             return;
         }
-        errorsStream
-            .map((key, value) -> new KeyValue<>(key == null ? "null" : key.toString(), value))
-            .processValues(GenericErrorProcessor<V>::new)
-            .to(KafkaStreamsExecutionContext.getDlqTopicName(), Produced.with(Serdes.String(),
-                SerdesUtils.getSerdesForValue()));
+        boolean isErrorAvroFormat = AVRO.equals(KafkaStreamsExecutionContext.getProperties().getProperty(ERROR + PROPERTY_SEPARATOR + FORMAT));
+
+        var filteredStream = errorsStream
+                .map((key, value) -> new KeyValue<>(key == null ? "null" : key.toString(), value));
+        
+        if (isErrorAvroFormat) {
+            filteredStream
+                    .processValues(GenericAvroErrorProcessor<V>::new)
+                    .to(KafkaStreamsExecutionContext.getDlqTopicName(), Produced.with(Serdes.String(),
+                            SerdesUtils.getSerdesForValue()));
+        } else {
+            filteredStream
+                    .processValues(GenericJsonErrorProcessor<V>::new)
+                    .to(KafkaStreamsExecutionContext.getDlqTopicName(), Produced.with(Serdes.String(),
+                            JsonSerdesUtils.getSerdesForValue(JsonError.class)));
+        }
     }
 }

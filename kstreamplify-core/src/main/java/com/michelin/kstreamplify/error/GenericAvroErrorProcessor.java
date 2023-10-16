@@ -13,7 +13,7 @@ import org.apache.kafka.streams.processor.api.RecordMetadata;
  *
  * @param <V> The type of the failed record
  */
-public class GenericErrorProcessor<V>
+public class GenericAvroErrorProcessor<V>
     implements FixedKeyProcessor<String, ProcessingError<V>, KafkaError> {
     private FixedKeyProcessorContext<String, KafkaError> context;
 

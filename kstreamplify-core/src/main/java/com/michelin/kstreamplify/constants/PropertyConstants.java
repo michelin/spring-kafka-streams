@@ -42,4 +42,19 @@ public final class PropertyConstants {
      * Default prefix property name.
      */
     public static final String SELF = "self";
+
+    /**
+     * Default prefix property name.
+     */
+    public static final String ERROR = "error";
+
+    /**
+     * Default prefix property name.
+     */
+    public static final String FORMAT = "format";
+
+    /**
+     * Default prefix property name.
+     */
+    public static final String AVRO = "avro";
 }

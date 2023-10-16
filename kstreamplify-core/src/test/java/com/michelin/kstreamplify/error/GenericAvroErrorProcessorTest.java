@@ -1,13 +1,11 @@
 package com.michelin.kstreamplify.error;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.michelin.kstreamplify.avro.KafkaError;
-import com.michelin.kstreamplify.error.GenericErrorProcessor;
-import com.michelin.kstreamplify.error.ProcessingError;
+
 import java.util.Optional;
 import org.apache.kafka.streams.processor.api.FixedKeyProcessorContext;
 import org.apache.kafka.streams.processor.api.FixedKeyRecord;
@@ -15,12 +13,11 @@ import org.apache.kafka.streams.processor.api.RecordMetadata;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class GenericErrorProcessorTest {
-    private final GenericErrorProcessor<String> errorProcessor = new GenericErrorProcessor<>();
+class GenericAvroErrorProcessorTest {
+    private final GenericAvroErrorProcessor<String> errorProcessor = new GenericAvroErrorProcessor<>();
 
     @Mock
     private FixedKeyProcessorContext<String, KafkaError> mockContext;
