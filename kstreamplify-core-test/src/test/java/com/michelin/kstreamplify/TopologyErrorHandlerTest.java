@@ -1,5 +1,9 @@
 package com.michelin.kstreamplify;
 
+import static com.michelin.kstreamplify.constants.PropertyConstants.AVRO;
+import static com.michelin.kstreamplify.constants.PropertyConstants.ERROR;
+import static com.michelin.kstreamplify.constants.PropertyConstants.FORMAT;
+import static com.michelin.kstreamplify.constants.PropertyConstants.PROPERTY_SEPARATOR;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.michelin.kstreamplify.avro.KafkaError;
@@ -9,6 +13,8 @@ import com.michelin.kstreamplify.initializer.KafkaStreamsStarter;
 import com.michelin.kstreamplify.utils.SerdesUtils;
 import com.michelin.kstreamplify.utils.TopicWithSerde;
 import java.util.List;
+import java.util.Properties;
+
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -33,6 +39,13 @@ class TopologyErrorHandlerTest extends KafkaStreamsStarterTest {
     private TestOutputTopic<String, KafkaError> avroOutputTopic;
     private TestOutputTopic<String, String> stringOutputTopic;
     private TestOutputTopic<String, KafkaError> dlqTopic;
+
+    @Override
+    protected Properties getCustomProperties() {
+        var props = new Properties();
+        props.setProperty(ERROR + PROPERTY_SEPARATOR + FORMAT, AVRO);
+        return props;
+    }
 
     @Override
     protected KafkaStreamsStarter getKafkaStreamsStarter() {

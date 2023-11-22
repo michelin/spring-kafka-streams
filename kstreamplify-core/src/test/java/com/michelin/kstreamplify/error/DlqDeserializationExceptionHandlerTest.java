@@ -145,7 +145,10 @@ class DlqDeserializationExceptionHandlerTest {
         configs.put("schema.registry.url", "localhost:8080");
         configs.put("acks", "all");
 
-        avroHandler = new DlqDeserializationExceptionHandler(null);
+        // reset DlqExceptionHandler producer
+        DlqExceptionHandler.producer = null;
+        
+        avroHandler = new DlqDeserializationExceptionHandler();
         avroHandler.configure(configs);
 
         assertTrue(DlqExceptionHandler.getProducer() instanceof KafkaProducer<byte[], Object>);

@@ -22,6 +22,11 @@ import org.apache.kafka.streams.TopologyTestDriver;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
+import static com.michelin.kstreamplify.constants.PropertyConstants.AVRO;
+import static com.michelin.kstreamplify.constants.PropertyConstants.ERROR;
+import static com.michelin.kstreamplify.constants.PropertyConstants.FORMAT;
+import static com.michelin.kstreamplify.constants.PropertyConstants.PROPERTY_SEPARATOR;
+
 /**
  * <p>The main test class to extend to execute unit tests on topology</p>.
  * <p>It provides a {@link TopologyTestDriver} and a {@link TestOutputTopic} for the DLQ</p>
@@ -37,14 +42,22 @@ public abstract class KafkaStreamsStarterTest {
     /**
      * The dlq topic, initialized in {@link #generalSetUp()}.
      */
-    protected TestOutputTopic<String, KafkaError> dlqTopic;
+    protected TestOutputTopic<String, Object> dlqTopic;
+
+    /**
+     * Override for custom properties
+     * @return The custom properties or a new empty Properties object if not set
+     */
+    protected Properties getCustomProperties(){
+        return new Properties();
+    } 
 
     /**
      * Set up topology test driver.
      */
     @BeforeEach
     void generalSetUp() {
-        Properties properties = new Properties();
+        Properties properties = getCustomProperties();
         properties.setProperty(StreamsConfig.APPLICATION_ID_CONFIG, "test");
         properties.setProperty(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "mock:1234");
         properties.setProperty(StreamsConfig.STATE_DIR_CONFIG, STATE_DIR + getClass().getName());
